@@ -8,6 +8,7 @@ Run this script to verify the ellipse detection implementation works correctly.
 import os
 import sys
 import time
+import tempfile
 
 # Add python_src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python_src'))
@@ -15,6 +16,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python_src'))
 import cv2
 import numpy as np
 from ellipse_detector import EllipseDetector, detect_ellipses
+
+# Get temp directory for cross-platform compatibility
+TEMP_DIR = tempfile.gettempdir()
 
 
 def test_synthetic_image():
@@ -47,7 +51,7 @@ def test_synthetic_image():
     result = detector.draw_ellipses(img, ellipses)
     
     # Save result
-    output_path = '/tmp/test_synthetic_result.jpg'
+    output_path = os.path.join(TEMP_DIR, 'test_synthetic_result.jpg')
     cv2.imwrite(output_path, result)
     print(f"Result saved to: {output_path}")
     
@@ -89,8 +93,8 @@ def test_real_image(image_path):
     
     # Save results
     base_name = os.path.splitext(os.path.basename(image_path))[0]
-    output_path = f'/tmp/test_{base_name}_result.jpg'
-    edge_path = f'/tmp/test_{base_name}_edge.jpg'
+    output_path = os.path.join(TEMP_DIR, f'test_{base_name}_result.jpg')
+    edge_path = os.path.join(TEMP_DIR, f'test_{base_name}_edge.jpg')
     
     cv2.imwrite(output_path, result)
     cv2.imwrite(edge_path, edge)

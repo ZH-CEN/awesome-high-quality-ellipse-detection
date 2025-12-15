@@ -479,6 +479,9 @@
         const ellipseList = document.getElementById('ellipseList');
         const polarityButtons = document.querySelectorAll('.polarity-btn');
         
+        // Configuration
+        const REALTIME_INTERVAL_MS = 500;  // Interval for real-time detection in milliseconds
+        
         // State
         let stream = null;
         let isRealtime = false;
@@ -566,7 +569,7 @@
                 toggleRealtimeBtn.classList.remove('btn-secondary');
                 realtimeStatus.classList.remove('hidden');
                 
-                realtimeInterval = setInterval(captureAndDetect, 500);
+                realtimeInterval = setInterval(captureAndDetect, REALTIME_INTERVAL_MS);
             } else {
                 toggleRealtimeBtn.textContent = '▶ 开始实时检测 / Start Real-time';
                 toggleRealtimeBtn.classList.remove('btn-danger');

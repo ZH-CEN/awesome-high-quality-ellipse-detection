@@ -10,6 +10,10 @@ import cv2
 from typing import Tuple, List, Optional
 from dataclasses import dataclass
 
+# Constants
+GRADIENT_NOTDEF = -1024.0  # Value for undefined gradient angles
+EIGENVALUE_TOLERANCE = 1e-8  # Tolerance for eigenvalue comparison in ellipse fitting
+
 
 @dataclass
 class Ellipse:
@@ -395,7 +399,7 @@ class EllipseDetector:
         edge = cv2.Canny(blurred, 50, 150)
         
         # Mask angles where there's no edge
-        angles[edge == 0] = -1024.0  # NOTDEF value
+        angles[edge == 0] = GRADIENT_NOTDEF
         
         return edge, angles
     
@@ -598,9 +602,9 @@ class EllipseDetector:
             eigenvalues, eigenvectors = np.linalg.eig(np.linalg.inv(S) @ C)
             
             # Find the positive eigenvalue (should be close to 0 from positive side)
-            valid_idx = np.where((np.real(eigenvalues) > -1e-8) & 
+            valid_idx = np.where((np.real(eigenvalues) > -EIGENVALUE_TOLERANCE) & 
                                  (np.isfinite(eigenvalues)) & 
-                                 (np.abs(np.imag(eigenvalues)) < 1e-8))[0]
+                                 (np.abs(np.imag(eigenvalues)) < EIGENVALUE_TOLERANCE))[0]
             
             if len(valid_idx) == 0:
                 return None
