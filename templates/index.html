@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高质量椭圆检测 - High-Quality Ellipse Detection</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section h3 {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #00d4ff;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 8px;
+        }
+        
+        .param-group {
+            margin-bottom: 15px;
+        }
+        
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        
+        .param-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .param-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .param-value {
+            text-align: right;
+            font-size: 0.85em;
+            color: #00ff88;
+            margin-top: 3px;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+            color: #fff;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .video-container {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .video-wrapper {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .video-box {
+            flex: 1;
+            min-width: 300px;
+            max-width: 100%;
+            position: relative;
+        }
+        
+        .video-box video,
+        .video-box canvas,
+        .video-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            display: block;
+        }
+        
+        .video-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.85em;
+        }
+        
+        .results-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .results-panel h3 {
+            margin-bottom: 15px;
+            color: #00ff88;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .ellipse-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .ellipse-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .ellipse-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .ellipse-item span {
+            color: #00d4ff;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .drop-zone:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .drop-zone.active {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .status.info {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .status.success {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .status.error {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .polarity-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .polarity-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        
+        .polarity-btn.active {
+            background: #00d4ff;
+            border-color: #00d4ff;
+            color: #000;
+        }
+        
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #00d4ff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 高质量椭圆检测</h1>
+            <p class="subtitle">High-Quality Ellipse Detection - Real-time Detection with Camera or Image Upload</p>
+        </header>
+        
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="section">
+                    <h3>📷 输入源 / Input Source</h3>
+                    <div class="btn-group">
+                        <button id="startCameraBtn" class="btn btn-primary">📹 启动摄像头 / Start Camera</button>
+                        <button id="stopCameraBtn" class="btn btn-danger hidden">⏹ 停止摄像头 / Stop Camera</button>
+                        <button id="captureBtn" class="btn btn-success hidden">📸 截图检测 / Capture & Detect</button>
+                    </div>
+                    
+                    <div class="drop-zone" id="dropZone" style="margin-top: 15px;">
+                        <p>📁 拖拽图片到此处或点击上传</p>
+                        <p style="font-size: 0.8em; color: #888;">Drop image here or click to upload</p>
+                        <input type="file" id="fileInput" class="file-input" accept="image/*">
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>⚙️ 参数设置 / Parameters</h3>
+                    
+                    <div class="param-group">
+                        <label>角度覆盖阈值 / Angular Coverage (Tac)</label>
+                        <input type="range" id="tacSlider" min="90" max="300" value="165">
+                        <div class="param-value"><span id="tacValue">165</span>°</div>
+                    </div>
+                    
+                    <div class="param-group">
+                        <label>支持内点比率 / Support Ratio (Tr)</label>
+                        <input type="range" id="trSlider" min="30" max="90" value="60">
+                        <div class="param-value"><span id="trValue">0.60</span></div>
+                    </div>
+                    
+                    <div class="param-group">
+                        <label>极性选择 / Polarity</label>
+                        <div class="polarity-buttons">
+                            <button class="polarity-btn active" data-polarity="0">全部 / All</button>
+                            <button class="polarity-btn" data-polarity="1">正 / +</button>
+                            <button class="polarity-btn" data-polarity="-1">负 / -</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>🔄 实时检测 / Real-time</h3>
+                    <div class="btn-group">
+                        <button id="toggleRealtimeBtn" class="btn btn-secondary">▶ 开始实时检测 / Start Real-time</button>
+                    </div>
+                    <div id="realtimeStatus" class="status info hidden">
+                        <span class="loader"></span>实时检测中... / Detecting...
+                    </div>
+                </div>
+            </aside>
+            
+            <div class="content-area">
+                <div class="video-container">
+                    <div class="video-wrapper">
+                        <div class="video-box">
+                            <div class="video-label">📷 输入 / Input</div>
+                            <video id="video" autoplay playsinline></video>
+                            <canvas id="inputCanvas" class="hidden"></canvas>
+                            <img id="uploadedImage" class="hidden" alt="Uploaded">
+                        </div>
+                        <div class="video-box">
+                            <div class="video-label">🎯 检测结果 / Detection Result</div>
+                            <img id="resultImage" alt="Detection Result" style="background: #222;">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="results-panel">
+                    <h3>📊 检测结果 / Detection Results</h3>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="ellipseCount">0</div>
+                            <div class="stat-label">检测到的椭圆 / Ellipses</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="processTime">-</div>
+                            <div class="stat-label">处理时间 / Process Time</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="imageSize">-</div>
+                            <div class="stat-label">图像尺寸 / Image Size</div>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin-bottom: 10px; color: #aaa;">椭圆列表 / Ellipse List</h4>
+                    <div class="ellipse-list" id="ellipseList">
+                        <p style="color: #666; text-align: center; padding: 20px;">暂无检测结果 / No results yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const video = document.getElementById('video');
+        const inputCanvas = document.getElementById('inputCanvas');
+        const uploadedImage = document.getElementById('uploadedImage');
+        const resultImage = document.getElementById('resultImage');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const stopCameraBtn = document.getElementById('stopCameraBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const toggleRealtimeBtn = document.getElementById('toggleRealtimeBtn');
+        const realtimeStatus = document.getElementById('realtimeStatus');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const tacSlider = document.getElementById('tacSlider');
+        const trSlider = document.getElementById('trSlider');
+        const tacValue = document.getElementById('tacValue');
+        const trValue = document.getElementById('trValue');
+        const ellipseCount = document.getElementById('ellipseCount');
+        const processTime = document.getElementById('processTime');
+        const imageSize = document.getElementById('imageSize');
+        const ellipseList = document.getElementById('ellipseList');
+        const polarityButtons = document.querySelectorAll('.polarity-btn');
+        
+        // State
+        let stream = null;
+        let isRealtime = false;
+        let realtimeInterval = null;
+        let currentPolarity = 0;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSliderValues();
+        });
+        
+        // Camera Controls
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                });
+                video.srcObject = stream;
+                video.classList.remove('hidden');
+                uploadedImage.classList.add('hidden');
+                inputCanvas.classList.add('hidden');
+                startCameraBtn.classList.add('hidden');
+                stopCameraBtn.classList.remove('hidden');
+                captureBtn.classList.remove('hidden');
+            } catch (err) {
+                alert('无法访问摄像头 / Cannot access camera: ' + err.message);
+            }
+        });
+        
+        stopCameraBtn.addEventListener('click', () => {
+            stopCamera();
+        });
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            video.srcObject = null;
+            video.classList.add('hidden');
+            startCameraBtn.classList.remove('hidden');
+            stopCameraBtn.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+            
+            if (isRealtime) {
+                toggleRealtime();
+            }
+        }
+        
+        // Capture and Detect
+        captureBtn.addEventListener('click', () => {
+            if (!stream) return;
+            captureAndDetect();
+        });
+        
+        async function captureAndDetect() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.9);
+            imageSize.textContent = `${video.videoWidth}x${video.videoHeight}`;
+            
+            await detectEllipses(imageData);
+        }
+        
+        // Real-time Detection
+        toggleRealtimeBtn.addEventListener('click', () => {
+            toggleRealtime();
+        });
+        
+        function toggleRealtime() {
+            isRealtime = !isRealtime;
+            
+            if (isRealtime) {
+                if (!stream) {
+                    alert('请先启动摄像头 / Please start camera first');
+                    isRealtime = false;
+                    return;
+                }
+                toggleRealtimeBtn.textContent = '⏹ 停止实时检测 / Stop Real-time';
+                toggleRealtimeBtn.classList.add('btn-danger');
+                toggleRealtimeBtn.classList.remove('btn-secondary');
+                realtimeStatus.classList.remove('hidden');
+                
+                realtimeInterval = setInterval(captureAndDetect, 500);
+            } else {
+                toggleRealtimeBtn.textContent = '▶ 开始实时检测 / Start Real-time';
+                toggleRealtimeBtn.classList.remove('btn-danger');
+                toggleRealtimeBtn.classList.add('btn-secondary');
+                realtimeStatus.classList.add('hidden');
+                
+                if (realtimeInterval) {
+                    clearInterval(realtimeInterval);
+                    realtimeInterval = null;
+                }
+            }
+        }
+        
+        // File Upload
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('active');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('active');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('active');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+        
+        function handleFileUpload(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('请上传图片文件 / Please upload an image file');
+                return;
+            }
+            
+            stopCamera();
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const img = new Image();
+                img.onload = async () => {
+                    uploadedImage.src = e.target.result;
+                    uploadedImage.classList.remove('hidden');
+                    video.classList.add('hidden');
+                    
+                    imageSize.textContent = `${img.width}x${img.height}`;
+                    await detectEllipses(e.target.result);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Detection API
+        async function detectEllipses(imageData) {
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: imageData,
+                        tac: parseInt(tacSlider.value),
+                        tr: parseInt(trSlider.value) / 100,
+                        polarity: currentPolarity
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const endTime = performance.now();
+                    processTime.textContent = `${Math.round(endTime - startTime)}ms`;
+                    
+                    resultImage.src = data.result_image;
+                    ellipseCount.textContent = data.num_ellipses;
+                    
+                    updateEllipseList(data.ellipses);
+                } else {
+                    console.error('Detection error:', data.error);
+                }
+            } catch (err) {
+                console.error('API error:', err);
+            }
+        }
+        
+        function updateEllipseList(ellipses) {
+            if (ellipses.length === 0) {
+                ellipseList.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">未检测到椭圆 / No ellipses detected</p>';
+                return;
+            }
+            
+            ellipseList.innerHTML = ellipses.map((e, i) => `
+                <div class="ellipse-item">
+                    <strong>#${i + 1}</strong> - 
+                    中心: <span>(${e.center_x}, ${e.center_y})</span> | 
+                    轴: <span>${e.semi_major}×${e.semi_minor}</span> | 
+                    角度: <span>${e.angle_deg}°</span>
+                </div>
+            `).join('');
+        }
+        
+        // Parameter Controls
+        function updateSliderValues() {
+            tacValue.textContent = tacSlider.value;
+            trValue.textContent = (parseInt(trSlider.value) / 100).toFixed(2);
+        }
+        
+        tacSlider.addEventListener('input', updateSliderValues);
+        trSlider.addEventListener('input', updateSliderValues);
+        
+        // Polarity Buttons
+        polarityButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                polarityButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPolarity = parseInt(btn.dataset.polarity);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -2,19 +2,78 @@ This is forked from [这里](https://github.com/AlanLuSun/High-quality-ellipse-d
 
 # High-quality Ellipse Detection
 
+## 🐍 Pure Python Version (NEW!)
+
+This repository now includes a **pure Python implementation** with a web-based frontend that supports real-time ellipse detection using your device's camera!
+
+### Quick Start (Python)
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the web application
+python app.py
+
+# Open http://localhost:5000 in your browser
+```
+
+### Python API Usage
+
+```python
+from python_src import EllipseDetector
+import cv2
+
+# Load image
+image = cv2.imread('your_image.jpg')
+
+# Create detector
+detector = EllipseDetector(Tac=165, Tr=0.6)
+
+# Detect ellipses
+ellipses, edge_image = detector.detect(image)
+
+# Draw results
+result = detector.draw_ellipses(image, ellipses)
+
+# Print detected ellipses
+for e in ellipses:
+    print(f"Center: ({e.center_x:.1f}, {e.center_y:.1f}), "
+          f"Axes: ({e.semi_major:.1f}, {e.semi_minor:.1f}), "
+          f"Angle: {e.angle:.2f} rad")
+```
+
+### Web Interface Features
+- 📷 **Camera Support**: Real-time ellipse detection from your device's camera
+- 📁 **Image Upload**: Drag & drop or click to upload images
+- ⚙️ **Parameter Tuning**: Adjust Tac, Tr, and polarity in real-time
+- 🔄 **Live Detection**: Toggle continuous real-time detection mode
+- 📊 **Results Display**: View detected ellipses with detailed parameters
+
+### Python Requirements
+- Python 3.7+
+- numpy >= 1.19.0
+- opencv-python >= 4.5.0
+- Flask >= 2.0.0
+- Pillow >= 8.0.0
+
+---
+
+## Original MATLAB Version
+
 ## 1. Illustration
 - This is the source code for the paper [Arc-support Line Segments Revisited: An Efficient and High-quality Ellipse Detection](https://arxiv.org/abs/1810.03243). ***Important: Please use the citation of our IEEE TIP version instead of arXiv version***.
 - The main contribution of the proposed ellipse detector is to both accurately and efficiently detect ellipses in images, which is universally considered as a tough and long-standing problem in ellipse detection field. The proposed ellipse detector owns the features of *high localization accuracy, efficiency, robustness*, and *stability*, which comprehensively yields high-quality ellipse detection performance in front of real-world images. 
 - There are only *two* extrinsic parameters, namely the elliptic angular coverage $T_{ac}$ and the ratio of support inliers $T_{r}$, which enables the proposed ellipse detector to be conveniently used and applied in real applications. In addition, the *specified_polarity* option can help users find the polarity-specific ellipses in the image. The default parameters $T_{ac} = 165^o$ and $T_{r} = 0.6$ are used for comparison experiments in our paper.  
 - The source code is free for academic use. Please cite our paper if you use the source code, thanks.
 
-## 2. Requirements
+## 2. Requirements (MATLAB Version)
 - MATLAB
 - OpenCV (Version 2.4.9)
 - 64-bit Windows Operating System
 
 
-## 3. How to use
+## 3. How to use (MATLAB Version)
 - Firstly, compile the file "generateEllipseCandidates.cpp" in MATLAB on your computer to generate the mex file "generateEllipseCandidates.mexw64" with the following command:  
   
   ---
